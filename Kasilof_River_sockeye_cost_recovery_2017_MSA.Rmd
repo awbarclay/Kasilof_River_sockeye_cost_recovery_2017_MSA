@@ -1,0 +1,85 @@
+---
+title: "Kasilof_River_sockeye_cost_recovery_2017_MSA"
+author: "Andy Barclay"
+date: "March 20, 2019"
+output: html_document
+---
+
+This R markdown file documents the mixed stock analysis (MSA) of fish caught in the mouth of the Kasilof River on June 15, 2017 by ADF&G as a cost recovery to offset the cost of operating the Cook Inlet Offshore Test Fishery (OTF). This analysis was requested by Forest Bowers on behalf of the commissioner (Doug Vincent-Lang) on March 18, 2019.  Chris Habicht and I talked to Pat Shields (Soldotna CF - fish and game coordinator), as Brian Marston (Cook Inlet CF manager) was not available, to determine what questions they want to answer with this analysis. Pat said that they would like to know the component of Early Russian River in the mixture samples and that three reporting groups would suffice for this analysis: EarlyRussian, Kasilof, and OtherCI
+
+Because only three reporting groups were needed for this anlysis we decided to analyze only 190 of 300 the samples for the 24 SNP markers used to analyzed the commercial catch.  This meant that all samples and loci could be anlyzed on the same chip (192.24 IFC) and would save time and money.
+
+##Set up workspace
+###Get functions and load tidy packages
+```{r workspace setup, echo=FALSE}
+
+source("C:\\Users\\awbarclay\\Documents\\R\\GitHubCloneFunctions.R")#GCL functions
+source("V:\\Analysis\\Staff\\Andy Barclay\\R\\New Functions\\WorkspaceFolders.GCL.R")#A function I wrote
+
+library("tidyverse")
+
+```
+
+###Create output folders 
+```{r create folders, echo=TRUE, message=FALSE}
+
+#WorkspaceFolders.GCL(Folders=c("data","output","bayes","objects","rubias"),Subfolders=list(rubias=c("baseline","mixture","output"),bayes=c("baseline","mixture","control","output")),wd=getwd())
+
+```
+###Select samples for analysis
+```{r read in fish and tissues table,message=FALSE}
+
+FishTissues <- read_csv(file="data/SKASCR17_fish_and_tissues.csv",col_names = TRUE) %>% 
+  mutate(SILLY_CODE="SKASCR17")
+
+
+
+```
+####Random selection of fish
+```{r select fish}
+
+Selection_df <- FishTissues %>% 
+  sample_n(size=190) %>% 
+  arrange(FK_FISH_ID)
+
+Selection_df
+
+
+```
+##Create Itemized extraction list
+```{r itemized selection,echo=FALSE}
+
+Itemized <- Selection_df %>% 
+  mutate(SILLY=SILLY_CODE,SAMPLE=FK_FISH_ID,WGC_BARCODE=DNA_TRAY_CODE,WELL_CODE=DNA_TRAY_WELL_CODE,TISSUE_TYPE=PK_TISSUE_TYPE) %>% 
+  select(SILLY,SAMPLE,WGC_BARCODE,WELL_CODE,TISSUE_TYPE)
+  
+
+write_excel_csv(Itemized,path="Itemized_Selection.csv")
+
+
+```
+```{r summary}
+
+Selection_Summary <- Itemized %>% 
+  group_by(WGC_BARCODE) %>% 
+  summarize(SILLY=unique(SILLY),Total_Samples=length(SAMPLE)) %>% 
+  select(SILLY,WGC_BARCODE,Total_Samples)
+
+write_excel_csv(Selection_Summary,path="Selection_Summary.csv")
+
+```
+
+
+
+###Create locus control and get genotype data
+```{r locus control, echo=TRUE}
+
+#CreateLocusControl.GCL(markersuite = "S128_UCI_24SNPs", username ="awbarclay", password = password)#Locus control
+
+#LOKI2R.GCL(sillyvec=c("SKASCR17"),username="awbarclay",password)#Pull Data from LOKI
+
+#save.image("V:/Analysis/2_Central/Chinook/Cook Inlet/2014/Mixture/ESSN_2010_2014_largefish_reanalysis/ESSN_2010_2014_largefish_reanalysis.Rdata")
+
+load("V:/Analysis/2_Central/Chinook/Cook Inlet/2014/Mixture/ESSN_2010_2014_largefish_reanalysis/ESSN_2010_2014_largefish_reanalysis.Rdata")
+
+```
